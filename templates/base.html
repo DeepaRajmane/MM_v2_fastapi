@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Home</title>
+  <link rel="stylesheet"href="{{url_for('static',path='/css/app.css')}}">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chartjsation@1.4.0/dist/chartjs-plugin-annotation.min.js"></script>
+  <style>
+    html, body {
+      height: 100%;
+    }
+    
+  </style>
+</head>
+<body class="bg-gray-300 h-full">
+  <div class="h-full flex flex-col">
+    <!-- Sidebar -->
+    <div class="flex flex-no-wrap h-full overflow-y-auto">    
+      <div class="overflow-y-auto md:w-64 bg-black text-white flex-shrink-0 h-full">
+        {% block sidebar %}{% endblock %} 
+      </div>    
+      <!-- Main content -->
+      <div class="flex-grow flex flex-col h-full">
+          <!-- Top bar -->
+        <header class="bg-white shadow">
+          <div class="container mx-auto px-6 py-4">
+            <div class="flex justify-between items-center">
+              <div>
+                <h1 class="text-3xl font-semibold  text-gray-800">Micro-Markets,KANTAR</h1>
+              </div>
+              <div>
+                <form action="/signout" method="get">
+                  <button type="signout" class="h-15 w-20 bg-black hover:bg-gray-500 focus:bg-gray-500 text-white font-semibold rounded-lg">Sign Out</button>
+                </form>
+              </div>
+            </div>
+          </div>
+        </header>
+          
+        <!-- Main panel content -->
+                  
+        <main class="p-2 flex-grow overflow-y-auto">
+          <div class="flex p-2">
+            
+            <nav class="navbar flex space-x-4 gap-4 text-blue-600 hover:underline">
+              
+              {% for item in nav_items %}              
+      
+              <a href="#" onclick="navigateTo('{{ item.lower() }}')" 
+                {% if request.url.path == '/' + item.lower() or (item == 'Home' and request.url.path == '/home') %}
+                class="active text-blue-400"{% endif %}>
+                {{ item }}
+              </a>
+                  
+              {% endfor %}
+              
+            </nav>
+          </div>          
+          <div class="flex-1 flex-grow h-full">            
+            {% block content %}{% endblock %}            
+          </div>                         
+        </main>
+      </div>
+    </div>    
+  </div>
+ 
+  <script>
+      // Function to update selected features and save to sessionStorage
+      // function updateSelectedFeatures() {
+      //     const selectedFeatures = Array.from(
+      //         document.querySelectorAll('input[name="selected_features"]:checked')
+      //     ).map(checkbox => checkbox.value);
+      //     sessionStorage.setItem('selectedFeatures', JSON.stringify(selectedFeatures));
+      //     console.log('Selected features updated:', selectedFeatures); // Debugging
+      // }
+      function updateSession() {
+        const selectedFeatures = Array.from(document.querySelectorAll('input[name="feature"]:checked')).map(cb => cb.value);
+        const selectedStates = Array.from(document.querySelectorAll('input[name="state"]:checked')).map(cb => cb.value);
+        const selectedCities = Array.from(document.querySelectorAll('input[name="city"]:checked')).map(cb => cb.value);
+        const selectedPincodes = Array.from(document.querySelectorAll('input[name="pincode"]:checked')).map(cb => cb.value);
+        
+        sessionStorage.setItem('selectedFeatures', JSON.stringify(selectedFeatures));
+        sessionStorage.setItem('selectedStates', JSON.stringify(selectedStates));
+        sessionStorage.setItem('selectedCities', JSON.stringify(selectedCities));
+        sessionStorage.setItem('selectedPincodes', JSON.stringify(selectedPincodes));
+
+        
+      }
+
+      function restoreSelections() {
+        const selectedFeatures = JSON.parse(sessionStorage.getItem('selectedFeatures') || '[]');
+        const selectedStates = JSON.parse(sessionStorage.getItem('selectedStates') || '[]');
+        const selectedCities = JSON.parse(sessionStorage.getItem('selectedCities') || '[]');
+        const selectedPincodes = JSON.parse(sessionStorage.getItem('selectedPincodes') || '[]');
+
+        document.querySelectorAll('input[name="feature"]').forEach(cb => cb.checked = selectedFeatures.includes(cb.value));
+        document.querySelectorAll('input[name="state"]').forEach(cb => cb.checked = selectedStates.includes(cb.value));
+        document.querySelectorAll('input[name="city"]').forEach(cb => cb.checked = selectedCities.includes(cb.value));
+        document.querySelectorAll('input[name="pincode"]').forEach(cb => cb.checked = selectedPincodes.includes(cb.value));
+        
+      }
+
+      document.addEventListener('DOMContentLoaded', () => {
+        restoreSelections();
+        document.querySelectorAll(' input[name="feature"], input[name="state"],input[name="city"], input[name="pincode"]').forEach(cb => {
+          cb.addEventListener('change', updateSession);
+        });
+
+      });      
+
+
+      function navigateTo(route) {
+        const selectedFeatures = JSON.parse(sessionStorage.getItem('selectedFeatures') || '[]');
+        const selectedStates = JSON.parse(sessionStorage.getItem('selectedStates') || '[]');
+        const selectedCities = JSON.parse(sessionStorage.getItem('selectedCities') || '[]');
+        const selectedPincodes = JSON.parse(sessionStorage.getItem('selectedPincodes') || '[]');
+        
+        const params = new URLSearchParams();
+        selectedFeatures.forEach(feature => params.append('selected_features', feature));
+        selectedStates.forEach(feature => params.append('selected_states', feature))
+        selectedCities.forEach(city => params.append('selected_cities', city));
+        selectedPincodes.forEach(pin => params.append('selected_pincodes', pin));
+        ;
+        const path = route === 'home' ? '/home' : `/${route}`;
+        window.location.href = path + (params.toString() ? '?' + params.toString() : '');
+        
+      }
+
+       
+  </script>
+</body>
+</html>
+
+
