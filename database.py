@@ -3,10 +3,10 @@ from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker
 
 
-#sqlite
-# DATABASE_URI = "sqlite:///./todos.db"
-# session = sessionmaker(autocommit=False, autoflush=False, bind=engine)
-# engine = create_engine(DATABASE_URI)
+
+# SQLite connection string (using a local file named user_db.sqlite)
+# engine = create_engine("sqlite:///user_db.sqlite", echo=True)
+
 
 engine = create_engine("mysql+pymysql://{user}:{pw}@localhost/{db}"
                        .format(user="root",

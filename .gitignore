@@ -3,12 +3,15 @@ data.db
 data.py
 selections.db
 KANTAR_ICUBE_2022_TO_2024_coded_Data_for_Mumbai.xlsx
-venv
-ipynb_checkpoints
-__pycache__
+venv/
+.ipynb_checkpoints/
+__pycache__/
 base_propensity_score_kantar_mumbai.json
 main.py
 templates/base1.html
 templates/home1.html
 templates/selected.html
-trial
+trial/
+filtering_data_on_markets.ipynb
+git_commands.txt
+New Text Document.txt

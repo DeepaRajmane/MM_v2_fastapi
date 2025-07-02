@@ -4,10 +4,7 @@
 <!-- code for city with pincodes -->
 {% if markets %} 
 <div class="relative mb-6 pt-4 p-2">
-  <!-- <button onclick="document.getElementById('dropdown').classList.toggle('hidden')" class="bg-white text-black text-xl font-semibold px-4 py-2 rounded w-full text-left">
-    Select Markets
-  </button> -->
-  <button onclick="toggleDropdown()"  class="bg-white text-black text-xl font-semibold px-4 py-2 rounded w-full text-left">
+  <button onclick="document.getElementById('dropdown').classList.toggle('hidden')" class="bg-white text-black text-xl font-semibold px-4 py-2 rounded w-full text-left">
     Select Markets
   </button>
   <!-- <div id="dropdown" class="hidden absolute z-10 w-full bg-white border rounded shadow mt-1 max-h-96 overflow-y-auto"> -->
@@ -46,10 +43,6 @@
 {% endif %}
 
 <script>
-function toggleDropdown() {
-    document.getElementById('dropdown').classList.toggle('hidden');
-  }
-
   function filterStates() {
     const input = document.getElementById('searchInput').value.toLowerCase();
     document.querySelectorAll('.state-group').forEach(group => {
@@ -109,7 +102,6 @@ function toggleDropdown() {
         updateSession();
       });
     });
-
     handleSelectAllPincodes();
   });
 </script>

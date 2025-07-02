@@ -19,11 +19,13 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 import json
-from typing import List
+from typing import List,Optional
 import sqlite3
 import logging
 from market_pmap import MarketStrengthAnalyzer
 import json
+import urllib.parse
+
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)

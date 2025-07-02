@@ -108,6 +108,11 @@
         document.querySelectorAll(' input[name="feature"], input[name="state"],input[name="city"], input[name="pincode"]').forEach(cb => {
           cb.addEventListener('change', updateSession);
         });
+      if (sessionStorage.getItem('selectedStates') !== '[]') {
+        document.getElementById('dropdown').classList.remove('hidden');
+        }
+        toggleCityVisibility();
+        togglePincodeVisibility();  
 
       });      
 
