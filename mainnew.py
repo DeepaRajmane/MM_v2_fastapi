@@ -240,8 +240,8 @@ def get_data():
         return []
     
 ################# trial data ##################
-df = pd.read_excel("C:\\Users\\RajmaneD\\OneDrive - Kantar\\DR\\MM_v2_fastapi\\KANTAR_MM_dummy_data.xlsx",sheet_name="OG")
-# df=pd.read_csv("C:\\Users\\RajmaneD\\OneDrive - Kantar\\DR\\MM_v2_fastapi\\india_states_cities.csv")
+# df = pd.read_excel("C:\\Users\\RajmaneD\\OneDrive - Kantar\\DR\\MM_v2_fastapi\\KANTAR_MM_dummy_data.xlsx",sheet_name="OG")
+df=pd.read_csv("C:\\Users\\RajmaneD\\OneDrive - Kantar\\DR\\MM_v2_fastapi\\india_states_cities.csv")
 df = df[~(df.longitude.isna() | df.latitude.isna())]
 #################################
 # df=get_data()
@@ -312,8 +312,8 @@ def get_percent_score(**d):
 
 ### get propensity score on city,state,pan india level for selected market
 def get_propensity(**d):
-    ## get the base to calculate propensity from json file
-    with open("base_propensity_score_kantar_mumbai.json", "r") as f:
+    ## get the base to calculate propensity from json file base_propensity_score_kantar_mumbai.json for mumbai data
+    with open("base_propensity_score_new.json", "r") as f:
         base = json.load(f)    
     perc_selected_pincodes=get_percent_score(**d)
     selected_features=d["selected_features"]

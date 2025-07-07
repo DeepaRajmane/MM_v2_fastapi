@@ -4,23 +4,26 @@
 <div class=" flex flex-col flex-grow w-full h-full p-2">  
   <h1 class="text-xl font-bold mb-4">Selected Markets</h1> 
   {% if grouped_selection_mkt %}
-    <div class="text-white p-2">
+    <!-- <div class="text-white p-2"> -->
+    <div class="text-white p-2 overflow-y-auto max-h-64 sm:max-h-80 md:max-h-96 pr-4">
         <!-- <h1 class="text-xl font-bold mb-4">Selected Markets</h1> -->
         {% for state, cities in grouped_selection_mkt.items() %}
         <div class="mb-4">
             <h2 class="text-lg font-semibold">{{ state }}</h2>
-            {% for city, data in cities.items() %}
-            <div class="ml-4">
-                <p class="font-medium" {% if data.selected %} Selected {% endif %} >{{ city }}</p>
-                {% if data.pincodes %}
-                <ul class="list-disc ml-6 text-sm">
-                {% for pin in data.pincodes %}
-                    <li>{{ pin }}</li>
-                {% endfor %}
-                </ul>
-                {% endif %}
-            </div>
-            {% endfor %}
+            <div class="overflow-y-auto max-h-40 pl-4">
+              {% for city, data in cities.items() %}
+              <div class="ml-4">
+                  <p class="font-medium" {% if data.selected %} Selected {% endif %} >{{ city }}</p>
+                  {% if data.pincodes %}
+                  <ul class="list-disc text-sm overflow-y-auto max-h-40 pl-4">
+                  {% for pin in data.pincodes %}
+                      <li>{{ pin }}</li>
+                  {% endfor %}
+                  </ul>
+                  {% endif %}
+              </div>
+              {% endfor %}
+          </div>
         </div>
         {% endfor %}
     </div>
@@ -106,15 +109,12 @@
     const rawData = {{ ps_data | tojson }};
     const ctx = document.getElementById('barChart').getContext('2d');
     let currentRegion = 'city';
-    // Register annotation plugin if needed
-    // Chart.register(window['chartjs-plugin-annotation']);
-
 
     const getChartData = (region) => {
       const values = rawData[region];
       const labels = Object.keys(values);
       const data = Object.values(values);
-      const colors = ( 'rgba(59,130,246,0.7)');
+      const colors = 'rgba(59,130,246,0.7)';
 
       return {
         labels: labels,
@@ -145,6 +145,15 @@
         }
       },
       plugins: {
+        tooltip: {
+          callbacks: {
+            label: function (context) {
+              const value = context.raw;
+              const prefix = value < 0 ? 'Lower by ' : 'Higher by ';
+              return prefix + Math.abs(value);
+            }
+          }
+        },
         annotation: {
           annotations: {
             baseline: {
@@ -164,6 +173,7 @@
         }
       }
     };
+
     let chart = new Chart(ctx, {
       type: 'bar',
       data: getChartData(currentRegion),
@@ -177,6 +187,7 @@
         chart.update();
       });
     });
+
 </script> 
 {% endblock %}
 

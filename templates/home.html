@@ -24,7 +24,7 @@
             </label>
             <div class="pincode-container pl-4 hidden max-h-40 overflow-y-auto scrollbar-thin scrollbar-width:10px scrollbar-border-radius:5px scrollbar-thumb-gray-500 scrollbar-track-gray-200 " data-parent-city="{{ city }}">
               <label class="block text-white text-sm font-medium ">
-                <input type="checkbox" class="select-all-pincode" data-city="{{ city }}"> Select All
+                <input type="checkbox" class="select-all-pincode " data-city="{{ city }}"> Select All
               </label>
               {% for pin in pincodes %}
               <label class="block   text-white text-sm font-medium">
@@ -129,7 +129,7 @@
                   {% if i < items|length %}
                     <label class="flex items-center space-x-2">
                       <input type="checkbox"name="feature" 
-                        value="{{ items[i].variable }}" class="form-checkbox text-gray-400"
+                        value="{{ items[i].variable }}" class="form-checkbox checked:bg-gray-800 text-gray-400"
                         {% if items[i].checked %}checked{% endif %}>
                       <span>{{ items[i].name }}</span>
                     </label>
