@@ -241,7 +241,7 @@ def get_data():
         return []
     
 ################# trial data ##################
-# df = pd.read_excel("C:\\Users\\RajmaneD\\OneDrive - Kantar\\DR\\MM_v2_fastapi\\KANTAR_MM_dummy_data.xlsx",sheet_name="OG")
+
 df=pd.read_csv("C:\\Users\\RajmaneD\\OneDrive - Kantar\\DR\\MM_v2_fastapi\\india_states_cities.csv")
 df = df[~(df.longitude.isna() | df.latitude.isna())]
 #################################
