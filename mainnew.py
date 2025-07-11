@@ -6,7 +6,7 @@ from fastapi.staticfiles import StaticFiles
 # from jose import JWTError, jwt
 from pydantic import BaseModel, EmailStr,ValidationError
 import uvicorn
-from database import SessionLocal,get_db
+from user_database import SessionLocal,get_db
 from models import Users
 from fastapi.responses import RedirectResponse
 import pandas as pd
@@ -175,6 +175,7 @@ def generate_context(selected_features: List[str] = None,
                      selected_pincodes: List[int] = None,) -> dict:
     try:
         features = get_features()
+        # print(f"features:{features}")
         grouped_features = {}
         selected_features = selected_features or []
         selected_states = selected_states or []
@@ -273,26 +274,6 @@ async def home(request: Request, selected_features: List[str] = Query(default=[]
     return templates.TemplateResponse("home.html", {"request": request, **context,
                                                     "markets": markets})
 
-
-### get selected markets grouped by state,city and pincode
-def get_selected_grouped_mkts(selected_cities: List[str] = None,
-                     selected_pincodes: List[int] = None,) -> dict:
-    try:
-        grouped_selection_mkt = {}
-        for state, cities in markets.items():
-            for city, pincodes in cities.items():
-                selected_city = city in selected_cities
-                selected_city_pincodes = [p for p in pincodes if p in selected_pincodes]
-                if selected_city or selected_city_pincodes:
-                    grouped_selection_mkt.setdefault(state, {})[city] = {
-                        "selected": selected_city,
-                        "pincodes": selected_city_pincodes
-                    }
-        # print(grouped_selection_mkt)
-        return grouped_selection_mkt
-    except Exception as err:
-        logger.error(f"problem in get_selected_grouped_mkts:{err}")
-
 ### get percentage for selected features on selected markets
 def get_percent_score(**d):
     try:        
@@ -313,7 +294,7 @@ def get_percent_score(**d):
 ### get propensity score on city,state,pan india level for selected market
 def get_propensity(**d):
     ## get the base to calculate propensity from json file base_propensity_score_kantar_mumbai.json for mumbai data
-    with open("base_propensity_score_new.json", "r") as f:
+    with open("base_propensity_score_dummy.json", "r") as f:
         base = json.load(f)    
     perc_selected_pincodes=get_percent_score(**d)
     selected_features=d["selected_features"]
@@ -350,6 +331,8 @@ def get_propensity(**d):
     ps['pan India']=ps_pan_india
     return ps
 
+
+
 @app.get("/dashboard", response_class=HTMLResponse)
 async def dashboard(request: Request, selected_features: List[str] = Query(default=[]),
                 selected_states: List[str] = Query(default=[]),
@@ -357,47 +340,50 @@ async def dashboard(request: Request, selected_features: List[str] = Query(defau
                 selected_pincodes: List[int] = Query(default=[])):
 
     context = generate_context(selected_features,selected_states,selected_cities,selected_pincodes)
-    grouped_selection_mkt=get_selected_grouped_mkts(selected_cities,selected_pincodes)      
-    if selected_features:
-        d_features_map={}
+    d_features_map={}     
+    if selected_features:       
         for feature in selected_features:
             for category, features_list in context['features'].items():
                 # print(f"featute list:{features_list}")
                 for f in features_list:
                     # print(f)
                     if f['variable'] == feature:
-                        d_features_map[f['variable']]=f['name']   
-        if (selected_cities and selected_pincodes): 
-            d_={"selected_features":selected_features,
-                "selected_states":selected_states,
-                "selected_cities":selected_cities,
-                "selected_pincodes":selected_pincodes,
-                "feature_map":d_features_map}    
-            ps_data = get_propensity(**d_)
-            # print(ps_data)            
-            try:                
-                df1 = df[(df['State'].isin(selected_states)) & (df['City'].isin(selected_cities)) & (df['pincode'].isin(selected_pincodes))]               
-            except Exception as e:
-                logger.error(f"problem in filtering data on markets:{e}")
-                print(f"problem in filtering data on markets:{e}")        
-            df_selected=df1[selected_features]
-        else:
-            df_selected=df[selected_features]
-    
-        dist_charts = []
-        for feature, values in df_selected.items():
-            count_1 = int(values.sum())
-            count_0 = int(len(values) - count_1)
-            dist_charts.append({
-            "label": d_features_map[feature],
-            "data": [count_1, count_0]}) 
+                        d_features_map[f['variable']]=f['name'] 
+    else:           
+        for category, features_list in context['features'].items():
+            for f in features_list:
+                d_features_map[f['variable']]=f['name'] 
+    if (selected_cities and selected_pincodes): 
+        d_={"selected_features":selected_features if selected_features else list(d_features_map.keys()),
+            "selected_states":selected_states,
+            "selected_cities":selected_cities,
+            "selected_pincodes":selected_pincodes,
+            "feature_map":d_features_map}    
+        ps_data = get_propensity(**d_)
+        # print(ps_data)            
+        try:                
+            df1 = df[(df['State'].isin(selected_states)) & (df['City'].isin(selected_cities)) & (df['pincode'].isin(selected_pincodes))]               
+        except Exception as e:
+            logger.error(f"problem in filtering data on markets:{e}")
+            print(f"problem in filtering data on markets:{e}")        
+        tdf=df1[selected_features if selected_features else list(d_features_map.keys())]
+    else:
+        tdf=df[selected_features if selected_features else list(d_features_map.keys())]
+
+    dist_charts = []
+    for feature, values in tdf.items():
+        count_1 = int(values.sum())
+        count_0 = int(len(values) - count_1)
+        dist_charts.append({
+        "label": d_features_map[feature],
+        "data": [count_1, count_0]}) 
         # print(f"dist_charts:{dist_charts}") 
           
     logger.info(f"Rendering dashboard page with selected features: {selected_features},states:{selected_states},cities:{selected_cities},pincodes:{selected_pincodes}")
     return templates.TemplateResponse("dashboard.html", {"request": request, **context,
-                                                        "grouped_selection_mkt": grouped_selection_mkt if (selected_cities and selected_pincodes) else None,
-                                                        "charts": dist_charts if selected_features else None,
-                                                        "ps_data":ps_data if (selected_pincodes and selected_features) else None})
+                                                        "markets": markets,
+                                                        "charts": dist_charts,
+                                                        "ps_data":ps_data if selected_pincodes else None})
 
                                                         
 
@@ -407,32 +393,37 @@ async def market(request: Request, selected_features: List[str] = Query(default=
                     selected_cities: List[str] = Query(default=[]),
                     selected_pincodes: List[int] = Query(default=[])):
     context = generate_context(selected_features,selected_states,selected_cities,selected_pincodes)
-    grouped_selection_mkt=get_selected_grouped_mkts(selected_cities,selected_pincodes) if (selected_cities and selected_pincodes) else {}
- 
-    if selected_features:
-        d_features={}
+    d_features={} 
+    if selected_features:        
         for feature in selected_features:
             for category, features_list in context['features'].items():
                 # print(f"featute list:{features_list}")
                 for f in features_list:
                     # print(f)
                     if f['variable'] == feature:
-                        d_features[f['variable']]=f['name']        
-        # Filter the DataFrame for selected states,cities and pincodes
-        if (selected_cities and selected_pincodes):
-            filtered_df = df[
-            df['State'].isin(selected_states) &
-            df['City'].isin(selected_cities) &
-            df['pincode'].isin(selected_pincodes)
-            ]
-        geo_data = GeoSpatialData(filtered_df if (selected_cities and selected_pincodes) else df )
-        geo_data.read_data()
-        geo_data.group_by_pincode(features=selected_features) 
-        map_file = './static/map.html'
-        geo_data.save_map(map_file,d_features)
+                        d_features[f['variable']]=f['name']  
+    else:           
+        for category, features_list in context['features'].items():
+            for f in features_list:
+                d_features[f['variable']]=f['name'] 
+                # print(d_features)     
+    # Filter the DataFrame for selected states,cities and pincodes
+    if (selected_cities and selected_pincodes):
+        filtered_df = df[
+        df['State'].isin(selected_states) &
+        df['City'].isin(selected_cities) &
+        df['pincode'].isin(selected_pincodes)
+        ]
+    geo_data = GeoSpatialData(filtered_df if (selected_cities and selected_pincodes) else df )
+    geo_data.read_data()
+    geo_data.group_by_pincode(features=selected_features if selected_features else list(d_features.keys())) 
+    map_file = './static/map.html'
+    geo_data.save_map(map_file,d_features)
+
+
     logger.info(f"Rendering marketmap page with selected features: {selected_features},states:{selected_states},cities:{selected_cities},pincodes:{selected_pincodes}")
     return templates.TemplateResponse("marketmap.html", {"request": request, **context,
-                                                         "grouped_selection_mkt": grouped_selection_mkt if (selected_cities and selected_pincodes) else None})
+                                                         "markets": markets})
 
 @app.get("/perceptualmap", response_class=HTMLResponse)
 async def perceptualmap(request: Request, selected_features: List[str] = Query(default=[]),
@@ -440,46 +431,50 @@ async def perceptualmap(request: Request, selected_features: List[str] = Query(d
                     selected_cities: List[str] = Query(default=[]),
                     selected_pincodes: List[int] = Query(default=[])):
     context = generate_context(selected_features,selected_states,selected_cities,selected_pincodes)   
-    grouped_selection_mkt=get_selected_grouped_mkts(selected_cities,selected_pincodes) if (selected_cities and selected_pincodes) else {}
-    if selected_features:
-        d_features_map={}
+    
+    if len(selected_features)>1: 
+        d_selected_features_map={}       
         for feature in selected_features:
             for category, features_list in context['features'].items():            
                 for f in features_list:                
                     if f['variable'] == feature:
-                        d_features_map[f['variable']]=f['name']
-        
-        ## filtering data for selected market
-        if (selected_cities and selected_pincodes):
-            selected_df = df[
-            df['State'].isin(selected_states) &
-            df['City'].isin(selected_cities) &
-            df['pincode'].isin(selected_pincodes)
-            ]
-        else:
-            selected_df = df
+                        d_selected_features_map[f['variable']]=f['name']
+    else:
+        d_features_map={}           
+        for category, features_list in context['features'].items():
+            for f in features_list:
+                d_features_map[f['variable']]=f['name']     
+    ## filtering data for selected market
+    if (selected_cities and selected_pincodes):
+        tdf = df[
+        df['State'].isin(selected_states) &
+        df['City'].isin(selected_cities) &
+        df['pincode'].isin(selected_pincodes)
+        ]
+    else:
+        tdf = df
 
-        plots = []
-        if len(selected_features)>1:
-            d={"features":selected_features,
-                "fmap":d_features_map,
-                "df":selected_df}
+    plots = []
 
-            msa=MarketStrengthAnalyzer(**d)
-            plots.append({"type": "Market Cluster", "data":msa.plot_market_clusters()})
-            plots.append({"type": "Cluster with Features", "data":msa.plot_biplot()})
-            plots.append({"type": "Market Strength", "data":msa.plot_market_strength()})        
-            mkt_summary_df=msa.calculate_market_strength() 
-            mkt_strength_summary=mkt_summary_df.to_dict(orient="records") 
-            columns = mkt_summary_df.columns.tolist()
+    d={"features":selected_features if len(selected_features)>1 else list(d_features_map.keys()),
+        "fmap":d_selected_features_map if len(selected_features)>1 else d_features_map,
+        "df":tdf}
+
+    msa=MarketStrengthAnalyzer(**d)
+    plots.append({"type": "Market Cluster", "data":msa.plot_market_clusters()})
+    plots.append({"type": "Cluster with Features", "data":msa.plot_biplot()})
+    plots.append({"type": "Market Strength", "data":msa.plot_market_strength()})        
+    mkt_summary_df=msa.calculate_market_strength() 
+    mkt_strength_summary=mkt_summary_df.to_dict(orient="records") 
+    columns = mkt_summary_df.columns.tolist()
    
     logger.info(f"Rendering settings with selected features: {selected_features}")
     return templates.TemplateResponse("perceptualmap.html", 
                                     {"request": request, **context,
-                                    "plots": plots if len(selected_features)>1 else None,
-                                    "mkt_strength_summary":mkt_strength_summary if len(selected_features)>1 else None,
-                                    "columns": columns if len(selected_features)>1 else None,
-                                    "grouped_selection_mkt": grouped_selection_mkt if (selected_cities and selected_pincodes) else None})
+                                    "plots": plots, 
+                                    "mkt_strength_summary":mkt_strength_summary,
+                                    "columns": columns,
+                                    "markets": markets})
  
 
 

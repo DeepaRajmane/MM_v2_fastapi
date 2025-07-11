@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String
 from sqlalchemy.ext.declarative import declarative_base
-from database import Base,engine
+from user_database import Base,engine
 
 
 class Users(Base):

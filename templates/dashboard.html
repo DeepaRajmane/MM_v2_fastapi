@@ -1,76 +1,41 @@
 {% extends "base.html" %}
 {% block title %}Dashboard{% endblock %}
-{% block sidebar %}
-<div class=" flex flex-col flex-grow w-full h-full p-2">  
-  <h1 class="text-xl font-bold mb-4">Selected Markets</h1> 
-  {% if grouped_selection_mkt %}
-    <!-- <div class="text-white p-2"> -->
-    <div class="text-white p-2 overflow-y-auto max-h-64 sm:max-h-80 md:max-h-96 pr-4">
-        <!-- <h1 class="text-xl font-bold mb-4">Selected Markets</h1> -->
-        {% for state, cities in grouped_selection_mkt.items() %}
-        <div class="mb-4">
-            <h2 class="text-lg font-semibold">{{ state }}</h2>
-            <div class="overflow-y-auto max-h-40 pl-4">
-              {% for city, data in cities.items() %}
-              <div class="ml-4">
-                  <p class="font-medium" {% if data.selected %} Selected {% endif %} >{{ city }}</p>
-                  {% if data.pincodes %}
-                  <ul class="list-disc text-sm overflow-y-auto max-h-40 pl-4">
-                  {% for pin in data.pincodes %}
-                      <li>{{ pin }}</li>
-                  {% endfor %}
-                  </ul>
-                  {% endif %}
-              </div>
-              {% endfor %}
-          </div>
-        </div>
-        {% endfor %}
-    </div>
-  {% else %}
-    <p>Pan India.</p>
-  {% endif %}
-</div>
-{% endblock %}
-
 {% block content %}
 <div class=" flex flex-grow w-full h-full p-2">   
-  {% if selected_features %}    
-    <div>
-      <!--First Row:Individual Donut Charts--> 
-      <div class="container mx-auto p-4 mb-6">
-        <h2 class="text-lg font-semibold mb-2">Feature Distribution</h2>
-        <div class="grid grid-cols-3 gap-6">                 
-            {% for chart in charts %}
-            <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-center font-semibold mb-2">{{ chart.label }}</h2>
-                <canvas id="chart{{ loop.index }}"></canvas>
-            </div>
-            {% endfor %}
-        </div>
-      </div>       
-        
-      <!-- Second Row: Bar chart propensity score -->
-      <div class="container mx-auto p-2 mb-6">               
-        <h1 class="text-xl font-bold mb-2">Propensity Scores</h1>
-        {% if selected_pincodes %}  
-          <div class="flex gap-4 mb-4">
-            {% for key in ps_data.keys() %}
-            <label class="inline-flex items-center">
-                <input type="radio" name="region" value="{{ key }}" class="form-radio" {% if loop.first %}checked{% endif %}>
-                <span class="ml-2 capitalize">{{ key }}</span>
-            </label>
-            {% endfor %}            
-          </div>           
-          <canvas id="barChart" height="100"></canvas> 
-        {% else %}
-          <p>No Markets selected.</p>
-        {% endif %}
-      </div>       
-    </div>
-  {% else %}
-    <p>No features selected.</p>
-  {% endif %}
+     
+  <div>
+    <!--First Row:Individual Donut Charts--> 
+    <div class="container mx-auto p-4 mb-6">
+      <h2 class="text-lg font-semibold mb-2">Feature Distribution</h2>
+      <div class="grid grid-cols-3 gap-6">                 
+          {% for chart in charts %}
+          <div class="bg-white p-4 rounded shadow">
+              <h2 class="text-center font-semibold mb-2">{{ chart.label }}</h2>
+              <canvas id="chart{{ loop.index }}"></canvas>
+          </div>
+          {% endfor %}
+      </div>
+    </div>       
+      
+    <!-- Second Row: Bar chart propensity score -->
+    <div class="container mx-auto p-2 mb-6">               
+      <h1 class="text-xl font-bold mb-2">Propensity Scores</h1>
+      {% if selected_pincodes %}  
+        <div class="flex gap-4 mb-4">
+          {% for key in ps_data.keys() %}
+          <label class="inline-flex items-center">
+              <input type="radio" name="region" value="{{ key }}" class="form-radio" {% if loop.first %}checked{% endif %}>
+              <span class="ml-2 capitalize">{{ key }}</span>
+          </label>
+          {% endfor %}            
+        </div>           
+        <canvas id="barChart" height="100"></canvas> 
+      {% else %}
+        <p>No Markets selected.</p>
+      {% endif %}
+    </div>       
+  </div>
+
 </div>
     
 <script>
@@ -154,23 +119,23 @@
             }
           }
         },
-        annotation: {
-          annotations: {
-            baseline: {
-              type: 'line',
-              yMin: -100,
-              yMax: +100,
-              borderColor: 'gray',
-              borderWidth: 2,
-              borderDash: [6, 6],
-              label: {
-                content: 'Baseline (100)',
-                enabled: true,
-                position: 'end'
-              }
-            }
-          }
-        }
+        // annotation: {
+        //   annotations: {
+        //     baseline: {
+        //       type: 'line',
+        //       yMin: 0,
+        //       yMax: 0,
+        //       borderColor: 'gray',
+        //       borderWidth: 1,
+        //       borderDash: [6, 6],
+        //       label: {
+        //         content: 'Baseline',
+        //         enabled: true,
+        //         position: 'end'
+        //       }
+        //     }
+        //   }
+        // }
       }
     };
 

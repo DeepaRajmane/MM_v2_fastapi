@@ -20,8 +20,49 @@
     <!-- Sidebar -->
     <div class="flex flex-no-wrap h-full overflow-y-auto">    
       <div class="overflow-y-auto md:w-64 bg-black text-white flex-shrink-0 h-full">
-        {% block sidebar %}{% endblock %} 
-      </div>    
+        <!-- sidebar contents copied from home tab -->
+        <!-- code for city with pincodes -->
+        {% if markets %} 
+        <div class="relative mb-6 pt-4 p-2">
+          <button onclick="document.getElementById('dropdown').classList.toggle('hidden')" class="bg-white text-black text-xl font-semibold px-4 py-2 rounded w-full text-left">
+            Select Markets
+          </button>
+          <!-- <div id="dropdown" class="hidden absolute z-10 w-full bg-white border rounded shadow mt-1 max-h-96 overflow-y-auto"> -->
+          <div id="dropdown" class=" relative hidden absolute z-10 w-full pr-4 py-2  rounded shadow mt-1 max-h-96  bg-black  overflow-y-auto scrollbar-thin scrollbar-width:10px scrollbar-border-radius:5px scrollbar-thumb-gray-500 scrollbar-track-gray-200">   
+            <input type="text" id="searchInput" placeholder="Search state..." class="w-full  border-gray-600 p-2  border-b" onkeyup="filterStates()">
+            <div id="stateList">
+              {% for state, cities in markets.items() %}
+              <div class="state-group" data-state="{{ state }}">
+                <label class="block bg-black px-2 py-1 text-white font-semibold">
+                  <input type="checkbox" name="state" value="{{ state }}" class="state-checkbox" data-state="{{ state }}" {% if state.checked %}checked{% endif %}> {{ state }}
+                </label>
+                <div class="city-container pr-2 pl-4 hidden max-h-40 overflow-y-auto scrollbar-thin scrollbar-width:6px  scrollbar-thumb-gray-500 scrollbar-track-gray-200" data-parent-state="{{ state }}">
+                  {% for city, pincodes in cities.items() %}
+                  <div class="city-group" data-city="{{ city }}">
+                    <label class="block  text-white text-sm font-medium">
+                      <input type="checkbox" name="city" value="{{ city }}" class="city-checkbox" data-city="{{ city }}" {% if city.checked %}checked{% endif %}> {{ city }}
+                    </label>
+                    <div class="pincode-container pl-4 pr-2 hidden max-h-40 overflow-y-auto scrollbar-thin scrollbar-width:10px scrollbar-border-radius:5px scrollbar-thumb-gray-500 scrollbar-track-gray-200 " data-parent-city="{{ city }}">
+                      <label class="block text-white text-sm font-medium ">
+                        <input type="checkbox" class="select-all-pincode " data-city="{{ city }}"> Select All
+                      </label>
+                      {% for pin in pincodes %}
+                      <label class="block   text-white text-sm font-medium">
+                        <input type="checkbox" name="pincode" value="{{ pin }}" data-city="{{ city }}" {% if pin.checked %}checked{% endif %}> {{ pin }}
+                      </label>
+                      {% endfor %}
+                    </div>
+                  </div>
+                  {% endfor %}
+                </div>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+        </div>
+        {% endif %}
+      </div>  
+           
       <!-- Main content -->
       <div class="flex-grow flex flex-col h-full">
           <!-- Top bar -->
@@ -40,23 +81,17 @@
           </div>
         </header>
           
-        <!-- Main panel content -->
-                  
+        <!-- Main panel content -->                  
         <main class="p-2 flex-grow overflow-y-auto">
-          <div class="flex p-2">
-            
-            <nav class="navbar flex space-x-4 gap-4 text-blue-600 hover:underline">
-              
-              {% for item in nav_items %}              
-      
+          <div class="flex p-2">            
+            <nav class="navbar flex space-x-4 gap-4 text-blue-600 hover:underline">              
+              {% for item in nav_items %}        
               <a href="#" onclick="navigateTo('{{ item.lower() }}')" 
                 {% if request.url.path == '/' + item.lower() or (item == 'Home' and request.url.path == '/home') %}
                 class="active text-blue-400"{% endif %}>
                 {{ item }}
-              </a>
-                  
-              {% endfor %}
-              
+              </a>                  
+              {% endfor %}              
             </nav>
           </div>          
           <div class="flex-1 flex-grow h-full">            
@@ -66,76 +101,163 @@
       </div>
     </div>    
   </div>
- 
   <script>
-      // Function to update selected features and save to sessionStorage
-      // function updateSelectedFeatures() {
-      //     const selectedFeatures = Array.from(
-      //         document.querySelectorAll('input[name="selected_features"]:checked')
-      //     ).map(checkbox => checkbox.value);
-      //     sessionStorage.setItem('selectedFeatures', JSON.stringify(selectedFeatures));
-      //     console.log('Selected features updated:', selectedFeatures); // Debugging
-      // }
-      function updateSession() {
-        const selectedFeatures = Array.from(document.querySelectorAll('input[name="feature"]:checked')).map(cb => cb.value);
-        const selectedStates = Array.from(document.querySelectorAll('input[name="state"]:checked')).map(cb => cb.value);
-        const selectedCities = Array.from(document.querySelectorAll('input[name="city"]:checked')).map(cb => cb.value);
-        const selectedPincodes = Array.from(document.querySelectorAll('input[name="pincode"]:checked')).map(cb => cb.value);
-        
-        sessionStorage.setItem('selectedFeatures', JSON.stringify(selectedFeatures));
-        sessionStorage.setItem('selectedStates', JSON.stringify(selectedStates));
-        sessionStorage.setItem('selectedCities', JSON.stringify(selectedCities));
-        sessionStorage.setItem('selectedPincodes', JSON.stringify(selectedPincodes));
+    const fullMarkets = {{ markets | tojson }};
+    function filterStates() {
+      const input = document.getElementById('searchInput').value.toLowerCase();
+      document.querySelectorAll('.state-group').forEach(group => {
+        const state = group.getAttribute('data-state').toLowerCase();
+        group.style.display = state.includes(input) ? 'block' : 'none';
+      });
+    }
 
-        
-      }
+    function toggleCityVisibility() {
+      document.querySelectorAll('.state-checkbox').forEach(stateCb => {
+        const state = stateCb.getAttribute('data-state');
+        const cityContainer = document.querySelector(`.city-container[data-parent-state="${state}"]`);
+        if (cityContainer) {
+          if (stateCb.checked) {
+            cityContainer.classList.remove('hidden');
+          } else {
+            cityContainer.classList.add('hidden');
+            cityContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+          }
+        }
+      });
+    }
 
-      function restoreSelections() {
-        const selectedFeatures = JSON.parse(sessionStorage.getItem('selectedFeatures') || '[]');
-        const selectedStates = JSON.parse(sessionStorage.getItem('selectedStates') || '[]');
-        const selectedCities = JSON.parse(sessionStorage.getItem('selectedCities') || '[]');
-        const selectedPincodes = JSON.parse(sessionStorage.getItem('selectedPincodes') || '[]');
+    function togglePincodeVisibility() {
+      document.querySelectorAll('.city-checkbox').forEach(cityCb => {
+        const city = cityCb.getAttribute('data-city');
+        const pinContainer = document.querySelector(`.pincode-container[data-parent-city="${city}"]`);
+        if (pinContainer) {
+          if (cityCb.checked) {
+            pinContainer.classList.remove('hidden');
+          } else {
+            pinContainer.classList.add('hidden');
+            pinContainer.querySelectorAll('input[type="checkbox"]').forEach(cb => cb.checked = false);
+          }
+        }
+      });
+    }
 
-        document.querySelectorAll('input[name="feature"]').forEach(cb => cb.checked = selectedFeatures.includes(cb.value));
-        document.querySelectorAll('input[name="state"]').forEach(cb => cb.checked = selectedStates.includes(cb.value));
-        document.querySelectorAll('input[name="city"]').forEach(cb => cb.checked = selectedCities.includes(cb.value));
-        document.querySelectorAll('input[name="pincode"]').forEach(cb => cb.checked = selectedPincodes.includes(cb.value));
-        
-      }
-
-      document.addEventListener('DOMContentLoaded', () => {
-        restoreSelections();
-        document.querySelectorAll(' input[name="feature"], input[name="state"],input[name="city"], input[name="pincode"]').forEach(cb => {
-          cb.addEventListener('change', updateSession);
+    function handleSelectAllPincodes() {
+      document.querySelectorAll('.select-all-pincode').forEach(selectAll => {
+        selectAll.addEventListener('change', () => {
+          const city = selectAll.getAttribute('data-city');
+          const checkboxes = document.querySelectorAll(`input[name="pincode"][data-city="${city}"]`);
+          checkboxes.forEach(cb => cb.checked = selectAll.checked);
+          updateSession();
         });
+      });
+    }
+
+    function updateSession() {
+      let selectedFeatures = [];
+      const featureCheckboxes = document.querySelectorAll('input[name="feature"]');
+      if (featureCheckboxes.length > 0) {
+        selectedFeatures = Array.from(featureCheckboxes)
+          .filter(cb => cb.checked)
+          .map(cb => cb.value);
+      } else {
+        const saved = sessionStorage.getItem('selectedFeatures');
+        if (saved) selectedFeatures = JSON.parse(saved);
+      }
+      sessionStorage.setItem('selectedFeatures', JSON.stringify(selectedFeatures));
+
+      const selectedStates = Array.from(document.querySelectorAll('input[name="state"]:checked')).map(cb => cb.value);
+      const selectedCities = Array.from(document.querySelectorAll('input[name="city"]:checked')).map(cb => cb.value);
+      const selectedPincodes = Array.from(document.querySelectorAll('input[name="pincode"]:checked')).map(cb => cb.value);
+
+      sessionStorage.setItem('selectedStates', JSON.stringify(selectedStates));
+      sessionStorage.setItem('selectedCities', JSON.stringify(selectedCities));
+      sessionStorage.setItem('selectedPincodes', JSON.stringify(selectedPincodes));
+
+      document.querySelectorAll('.select-all-pincode').forEach(selectAll => {
+        const city = selectAll.getAttribute('data-city');
+        sessionStorage.setItem(`selectAll-${city}`, selectAll.checked);
+      });
+    }    
+
+    function restoreSelections() {
+      const selectedFeatures = JSON.parse(sessionStorage.getItem('selectedFeatures') || '[]');
+      const selectedStates = JSON.parse(sessionStorage.getItem('selectedStates') || '[]');
+      const selectedCities = JSON.parse(sessionStorage.getItem('selectedCities') || '[]');
+      const selectedPincodes = JSON.parse(sessionStorage.getItem('selectedPincodes') || '[]');
+
+
+      // Restore features, states, cities
+      document.querySelectorAll('input[name="feature"]').forEach(cb => cb.checked = selectedFeatures.includes(cb.value));
+      document.querySelectorAll('input[name="state"]').forEach(cb => cb.checked = selectedStates.includes(cb.value));
+      document.querySelectorAll('input[name="city"]').forEach(cb => cb.checked = selectedCities.includes(cb.value));
+
+      // Temporarily expand everything to apply selections
+      document.querySelectorAll('.city-container').forEach(div => div.classList.remove('hidden'));
+      document.querySelectorAll('.pincode-container').forEach(div => div.classList.remove('hidden'));
+
+      // 1️⃣ Restore "Select All" logic
+      document.querySelectorAll('.select-all-pincode').forEach(selectAll => {
+        const city = selectAll.getAttribute('data-city');
+        const saved = sessionStorage.getItem(`selectAll-${city}`);
+        if (saved === 'true') {
+          selectAll.checked = true;
+          const checkboxes = document.querySelectorAll(`input[name="pincode"][data-city="${city}"]`);
+          checkboxes.forEach(cb => cb.checked = true);
+          const cityCheckbox = document.querySelector(`.city-checkbox[data-city="${city}"]`);
+          if (cityCheckbox) cityCheckbox.checked = true;
+        }
+      });
+
+      // 2️⃣ Now check individual selected pincodes regardless of Select All
+      document.querySelectorAll('input[name="pincode"]').forEach(cb => {
+        if (selectedPincodes.includes(cb.value)) {
+          cb.checked = true;
+          const city = cb.getAttribute('data-city');
+          const cityCheckbox = document.querySelector(`.city-checkbox[data-city="${city}"]`);
+          if (cityCheckbox) cityCheckbox.checked = true;
+        }
+      });
+
+      // Finally collapse again
+      toggleCityVisibility();
+      togglePincodeVisibility();
+    }
+    function navigateTo(route) {
+      updateSession();
+
+      const selectedFeatures = JSON.parse(sessionStorage.getItem('selectedFeatures') || '[]');
+      const selectedStates = JSON.parse(sessionStorage.getItem('selectedStates') || '[]');
+      const selectedCities = JSON.parse(sessionStorage.getItem('selectedCities') || '[]');
+      const selectedPincodes = JSON.parse(sessionStorage.getItem('selectedPincodes') || '[]');
+
+      const params = new URLSearchParams();
+      selectedFeatures.forEach(val => params.append('selected_features', val));
+      selectedStates.forEach(val => params.append('selected_states', val));
+      selectedCities.forEach(val => params.append('selected_cities', val));
+      selectedPincodes.forEach(val => params.append('selected_pincodes', val));
+
+      const path = route === 'home' ? '/home' : `/${route}`;
+      window.location.href = path + (params.toString() ? '?' + params.toString() : '');
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+      restoreSelections();
+
+      document.querySelectorAll('input[name="feature"], input[name="state"], input[name="city"], input[name="pincode"]').forEach(cb => {
+        cb.addEventListener('change', () => {
+          updateSession();
+          toggleCityVisibility();
+          togglePincodeVisibility();
+        });
+      });
+
       if (sessionStorage.getItem('selectedStates') !== '[]') {
         document.getElementById('dropdown').classList.remove('hidden');
-        }
-        toggleCityVisibility();
-        togglePincodeVisibility();  
-
-      });      
-
-
-      function navigateTo(route) {
-        const selectedFeatures = JSON.parse(sessionStorage.getItem('selectedFeatures') || '[]');
-        const selectedStates = JSON.parse(sessionStorage.getItem('selectedStates') || '[]');
-        const selectedCities = JSON.parse(sessionStorage.getItem('selectedCities') || '[]');
-        const selectedPincodes = JSON.parse(sessionStorage.getItem('selectedPincodes') || '[]');
-        
-        const params = new URLSearchParams();
-        selectedFeatures.forEach(feature => params.append('selected_features', feature));
-        selectedStates.forEach(feature => params.append('selected_states', feature))
-        selectedCities.forEach(city => params.append('selected_cities', city));
-        selectedPincodes.forEach(pin => params.append('selected_pincodes', pin));
-        ;
-        const path = route === 'home' ? '/home' : `/${route}`;
-        window.location.href = path + (params.toString() ? '?' + params.toString() : '');
-        
       }
 
-       
-  </script>
+      handleSelectAllPincodes();
+    });
+  </script>  
 </body>
 </html>
 
