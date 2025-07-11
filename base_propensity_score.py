@@ -34,7 +34,7 @@ class BasePropensityScore:
             json.dump(base, f, indent=4)
 
 if __name__=="__main__":
-    # df=pd.read_excel("C:\\Users\\RajmaneD\\OneDrive - Kantar\\DR\\MM_v2_fastapi\\KANTAR_MM_dummy_data.xlsx",sheet_name="OG")
+   
     df=pd.read_csv("C:\\Users\\RajmaneD\\OneDrive - Kantar\\DR\\MM_v2_fastapi\\india_states_cities.csv")
     df = df[~(df.longitude.isna() | df.latitude.isna())]
     features=['Online_Shopping', 'Linear_Television', 'Smart_Television',
