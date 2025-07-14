@@ -177,6 +177,12 @@
         const city = selectAll.getAttribute('data-city');
         sessionStorage.setItem(`selectAll-${city}`, selectAll.checked);
       });
+      
+      // If any state, city, or pincode is selected, reveal dropdown globally
+      if (selectedStates.length || selectedCities.length || selectedPincodes.length) {
+        sessionStorage.setItem('marketsVisible', 'true');
+      }
+
     }    
 
     function restoreSelections() {
@@ -251,9 +257,15 @@
         });
       });
 
-      if (sessionStorage.getItem('selectedStates') !== '[]') {
-        document.getElementById('dropdown').classList.remove('hidden');
-      }
+      // ✅ Show dropdown only if sessionStorage says to
+      if (sessionStorage.getItem('marketsVisible') === 'true') {
+          document.getElementById('dropdown').classList.remove('hidden');
+        }
+
+
+      // if (sessionStorage.getItem('selectedStates') !== '[]') {
+      //   document.getElementById('dropdown').classList.remove('hidden');
+      // }
 
       handleSelectAllPincodes();
     });
