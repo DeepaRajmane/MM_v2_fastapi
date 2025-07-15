@@ -22,7 +22,8 @@ import json
 from typing import List,Optional
 import sqlite3
 import logging
-from market_pmap import MarketStrengthAnalyzer
+# from market_pmap import MarketStrengthAnalyzer
+from pmap_chartjs import MarketStrengthAnalyzer
 import json
 import urllib.parse
 
@@ -425,13 +426,13 @@ async def market(request: Request, selected_features: List[str] = Query(default=
     return templates.TemplateResponse("marketmap.html", {"request": request, **context,
                                                          "markets": markets})
 
+## perceptual map display using chartjs
 @app.get("/perceptualmap", response_class=HTMLResponse)
 async def perceptualmap(request: Request, selected_features: List[str] = Query(default=[]),
                     selected_states: List[str] = Query(default=[]),
                     selected_cities: List[str] = Query(default=[]),
                     selected_pincodes: List[int] = Query(default=[])):
-    context = generate_context(selected_features,selected_states,selected_cities,selected_pincodes)   
-    
+    context = generate_context(selected_features,selected_states,selected_cities,selected_pincodes)     
     if len(selected_features)>1: 
         d_selected_features_map={}       
         for feature in selected_features:
@@ -453,28 +454,75 @@ async def perceptualmap(request: Request, selected_features: List[str] = Query(d
         ]
     else:
         tdf = df
-
-    plots = []
-
     d={"features":selected_features if len(selected_features)>1 else list(d_features_map.keys()),
         "fmap":d_selected_features_map if len(selected_features)>1 else d_features_map,
         "df":tdf}
-
     msa=MarketStrengthAnalyzer(**d)
-    plots.append({"type": "Market Cluster", "data":msa.plot_market_clusters()})
-    plots.append({"type": "Cluster with Features", "data":msa.plot_biplot()})
-    plots.append({"type": "Market Strength", "data":msa.plot_market_strength()})        
-    mkt_summary_df=msa.calculate_market_strength() 
-    mkt_strength_summary=mkt_summary_df.to_dict(orient="records") 
-    columns = mkt_summary_df.columns.tolist()
-   
+    cluster_chart_data,variance=msa.get_cluster_data()
+    biplot_data = msa.get_biplot_data()
+    market_strength_chart_data = msa.get_market_strength_data()
+    print(f"market_strength_chart_data:{market_strength_chart_data}") 
+
     logger.info(f"Rendering settings with selected features: {selected_features}")
-    return templates.TemplateResponse("perceptualmap.html", 
+    return templates.TemplateResponse("perceptualmap1.html", 
                                     {"request": request, **context,
-                                    "plots": plots, 
-                                    "mkt_strength_summary":mkt_strength_summary,
-                                    "columns": columns,
+                                    "cluster_chart_data": cluster_chart_data,
+                                    "variance": variance,
+                                    "biplot_data": biplot_data,
+                                    "market_strength_chart_data": market_strength_chart_data,
                                     "markets": markets})
+
+## perceptual map display using saved image
+# @app.get("/perceptualmap", response_class=HTMLResponse)
+# async def perceptualmap(request: Request, selected_features: List[str] = Query(default=[]),
+#                     selected_states: List[str] = Query(default=[]),
+#                     selected_cities: List[str] = Query(default=[]),
+#                     selected_pincodes: List[int] = Query(default=[])):
+#     context = generate_context(selected_features,selected_states,selected_cities,selected_pincodes)   
+    
+#     if len(selected_features)>1: 
+#         d_selected_features_map={}       
+#         for feature in selected_features:
+#             for category, features_list in context['features'].items():            
+#                 for f in features_list:                
+#                     if f['variable'] == feature:
+#                         d_selected_features_map[f['variable']]=f['name']
+#     else:
+#         d_features_map={}           
+#         for category, features_list in context['features'].items():
+#             for f in features_list:
+#                 d_features_map[f['variable']]=f['name']     
+#     ## filtering data for selected market
+#     if (selected_cities and selected_pincodes):
+#         tdf = df[
+#         df['State'].isin(selected_states) &
+#         df['City'].isin(selected_cities) &
+#         df['pincode'].isin(selected_pincodes)
+#         ]
+#     else:
+#         tdf = df
+
+#     plots = []
+
+#     d={"features":selected_features if len(selected_features)>1 else list(d_features_map.keys()),
+#         "fmap":d_selected_features_map if len(selected_features)>1 else d_features_map,
+#         "df":tdf}
+
+#     msa=MarketStrengthAnalyzer(**d)
+#     plots.append({"type": "Market Cluster", "data":msa.plot_market_clusters()})
+#     plots.append({"type": "Cluster with Features", "data":msa.plot_biplot()})
+#     plots.append({"type": "Market Strength", "data":msa.plot_market_strength()})        
+#     mkt_summary_df=msa.calculate_market_strength() 
+#     mkt_strength_summary=mkt_summary_df.to_dict(orient="records") 
+#     columns = mkt_summary_df.columns.tolist()
+   
+#     logger.info(f"Rendering settings with selected features: {selected_features}")
+#     return templates.TemplateResponse("perceptualmap.html", 
+#                                     {"request": request, **context,
+#                                     "plots": plots, 
+#                                     "mkt_strength_summary":mkt_strength_summary,
+#                                     "columns": columns,
+#                                     "markets": markets})
  
 
 

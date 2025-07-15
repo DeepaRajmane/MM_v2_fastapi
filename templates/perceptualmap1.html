@@ -1,0 +1,205 @@
+<title>PerceptualMap</title>
+{% extends "base.html" %}
+{% block title %}PerceptualMap{% endblock %}
+{% block content %}
+<div class=" flex flex-grow w-full h-full p-2"> 
+    <div>
+        <div class="grid grid-cols-1 md:grid-cols-2 max:grid-cols-3 gap-4 mb-6 p-2 pt-2">
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-4">Market Clusters</h2>
+                <canvas id="clusterChart" width="800" height="600"></canvas>
+            </div>
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-4">Market Perceptual Biplot</h2>
+                <canvas id="biplotChart" width="800" height="600"></canvas>
+            </div>
+            <div class="bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-4">Market Strength</h2>
+                <canvas id="marketStrengthChart" width="800" height="600"></canvas>
+            </div>
+        </div>        
+    </div> 
+</div>
+<script>
+    const rawData = {{ cluster_chart_data | tojson }};
+    const dataPoints = rawData.map(point => ({
+        x: point.x,
+        y: point.y,
+        label: point.label
+        }));
+
+    const ctxCluster = document.getElementById('clusterChart').getContext('2d');
+    new Chart(ctxCluster, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Market Clusters',
+                data: dataPoints,
+                // backgroundColor: 'rgba(54, 162, 235, 0.6)',
+                pointRadius: 4
+            }]
+        },
+        options: {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Pincode: ' + context.raw.label;
+                        }
+                    }
+                },
+                legend: { display: false }
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'PC1 (Explained Variance: {{ variance[0]|round(2) }})'
+                    }
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'PC2 (Explained Variance: {{ variance[1]|round(2) }})'
+                    }
+                }
+            }
+        }
+    });
+    // biplot
+    const biplotData = {{ biplot_data | tojson }};
+    const points = biplotData.points;
+    const arrows = biplotData.arrows;
+    const ctxBiplot = document.getElementById('biplotChart').getContext('2d');
+    const chart = new Chart(ctxBiplot, {
+        type: 'scatter',
+        data: {
+            datasets: [{
+                label: 'Markets',
+                data: points,
+                backgroundColor: 'rgba(75, 192, 192, 0.8)',
+                pointRadius: 5
+            }]
+        },
+        options: {
+            plugins: {
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return 'Pincode: ' + context.raw.label;
+                        }
+                    }
+                },
+                legend: { display: false },
+                biplotArrows: true
+            },
+            scales: {
+                x: {
+                    title: {
+                        display: true,
+                        text: 'PC1'
+                    },
+                    min: -1.2,
+                    max: 1.2
+                },
+                y: {
+                    title: {
+                        display: true,
+                        text: 'PC2'
+                    },
+                    min: -1.2,
+                    max: 1.2
+                }
+            }
+        },
+        plugins: [{
+            id: 'biplotArrows',
+            afterDatasetsDraw(chart, args, pluginOptions) {
+                const { ctx, chartArea: {left, right, top, bottom}, scales: {x, y} } = chart;
+                arrows.forEach(arrow => {
+                    const startX = x.getPixelForValue(0);
+                    const startY = y.getPixelForValue(0);
+                    const endX = x.getPixelForValue(arrow.x);
+                    const endY = y.getPixelForValue(arrow.y);
+                    // Draw the arrow
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.moveTo(startX, startY);
+                    ctx.lineTo(endX, endY);
+                    ctx.strokeStyle = 'red';
+                    ctx.lineWidth = 1.5;
+                    ctx.stroke();
+                    // Arrow head
+                    const angle = Math.atan2(endY - startY, endX - startX);
+                    const headLength = 10;
+                    ctx.beginPath();
+                    ctx.moveTo(endX, endY);
+                    ctx.lineTo(endX - headLength * Math.cos(angle - Math.PI / 6),
+                                endY - headLength * Math.sin(angle - Math.PI / 6));
+                    ctx.lineTo(endX - headLength * Math.cos(angle + Math.PI / 6),
+                                endY - headLength * Math.sin(angle + Math.PI / 6));
+                    ctx.lineTo(endX, endY);
+                    ctx.fillStyle = 'red';
+                    ctx.fill();
+                    // Feature name at arrow tip
+                    ctx.fillStyle = 'green';
+                    ctx.font = '10px sans-serif';
+                    ctx.textAlign = 'center';
+                    ctx.fillText(arrow.label, endX + 10, endY - 5);
+                    ctx.restore();
+                });
+            }
+        }]
+    });
+    // Market stength bar plot
+    const bardata = {{ market_strength_chart_data | tojson }};
+    const ctxMSbarplot = document.getElementById('marketStrengthChart').getContext('2d');
+
+    new Chart(ctxMSbarplot, {
+        type: 'bar',
+        data: {
+            labels: bardata.labels,
+            datasets: [{
+                label: 'Strength',
+                data: bardata.values,
+                backgroundColor: 'skyblue',
+                borderColor: 'black',
+                borderWidth: 1
+            }]
+        },
+        options: {
+            responsive: true,
+            plugins: {
+                legend: { display: false },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return `Strength: ${parseFloat(context.raw).toFixed(2)}`;
+                        }
+                    }
+                },
+                title: {
+                    display: true,
+                    text: 'Market Strength'
+                }
+            },
+            scales: {
+                x: {
+                    title: { display: true, text: 'Market Name' },
+                    ticks: { autoSkip: false, maxRotation: 45, minRotation: 45 }
+                },
+                y: {
+                    beginAtZero: true,
+                    title: { display: true, text: 'Strength' },
+                    grid: {
+                        drawOnChartArea: true,
+                        color: 'rgba(0,0,0,0.1)',
+                        borderDash: [4, 4]
+                    }
+                }
+            }
+        }
+    });
+</script>
+{% endblock %}
+
