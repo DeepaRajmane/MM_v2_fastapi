@@ -29,8 +29,11 @@
               <span class="ml-2 capitalize">{{ key }}</span>
           </label>
           {% endfor %}            
-        </div>           
-        <canvas id="barChart" height="100"></canvas> 
+        </div> 
+        <div class="bg-white p-4 rounded shadow">          
+          <canvas id="barChart" height="100"></canvas>
+          <!-- <button onclick="downloadChart('barChart', 'propensity_score.png')" class="mt-2 bg-black text-white px-4 py-1 rounded">Download PNG</button>  -->
+        </div>
       {% else %}
         <p>No Markets selected.</p>
       {% endif %}
@@ -153,6 +156,29 @@
         chart.update();
       });
     });
+    // download chart
+    function downloadChart(canvasId, filename) {
+        const canvas = document.getElementById(canvasId);
+
+        // Create a temporary offscreen canvas
+        const tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width = canvas.width;
+        tmpCanvas.height = canvas.height;
+        const ctx = tmpCanvas.getContext('2d');
+
+        // Fill white background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+
+        // Draw the original chart on top
+        ctx.drawImage(canvas, 0, 0);
+
+        // Export the composite image
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = tmpCanvas.toDataURL('image/png');
+        link.click();
+    }
 
 </script> 
 {% endblock %}

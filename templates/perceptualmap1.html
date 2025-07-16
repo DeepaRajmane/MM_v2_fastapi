@@ -5,18 +5,54 @@
 <div class=" flex flex-grow w-full h-full p-2"> 
     <div>
         <div class="grid grid-cols-1 md:grid-cols-2 max:grid-cols-3 gap-4 mb-6 p-2 pt-2">
-            <div class="bg-white p-4 rounded shadow">
+            <div class="relative bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-2">Market Clusters</h2>                
+                <!-- Download icon -->
+                <button onclick="downloadChart('clusterChart', 'market_clusters.png')"
+                        class="absolute top-2 right-2 text-gray-600 hover:text-blue-600"
+                        title="Download Chart">
+                    ⬇️
+                    <!-- Or use <i class="fas fa-download"></i> if using Font Awesome -->
+                </button>              
+                <canvas id="clusterChart" width="800" height="600"></canvas>
+              </div>
+            <div class="relative bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-2">Market Perceptual Biplot</h2>                
+                <!-- Download icon -->
+                <button onclick="downloadChart('biplotChart', 'market_perceptual_biplot.png')"
+                        class="absolute top-2 right-2 text-gray-600 hover:text-blue-600"
+                        title="Download Chart">
+                    ⬇️
+                    <!-- Or use <i class="fas fa-download"></i> if using Font Awesome -->
+                </button>              
+                <canvas id="biplotChart" width="800" height="600"></canvas>
+              </div>
+              <div class="relative bg-white p-4 rounded shadow">
+                <h2 class="text-lg font-semibold mb-2">Market Strength</h2>                
+                <!-- Download icon -->
+                <button onclick="downloadChart('marketStrengthChart', 'market_strength_barplot.png')"
+                        class="absolute top-2 right-2 text-gray-600 hover:text-blue-600"
+                        title="Download Chart">
+                    ⬇️
+                    
+                </button>              
+                <canvas id="marketStrengthChart" width="800" height="600"></canvas>
+              </div>
+            <!-- <div class="bg-white p-4 rounded shadow">
                 <h2 class="text-lg font-semibold mb-4">Market Clusters</h2>
                 <canvas id="clusterChart" width="800" height="600"></canvas>
-            </div>
-            <div class="bg-white p-4 rounded shadow">
+                <button onclick="downloadChart('clusterChart', 'market_clusters.png')" class="mt-2 bg-black text-white px-4 py-1 rounded">Download</button>
+            </div> -->
+            <!-- <div class="bg-white p-4 rounded shadow">
                 <h2 class="text-lg font-semibold mb-4">Market Perceptual Biplot</h2>
                 <canvas id="biplotChart" width="800" height="600"></canvas>
-            </div>
-            <div class="bg-white p-4 rounded shadow">
+                <button onclick="downloadChart('biplotChart', 'market_perceptual_biplot.png')" class="mt-2 bg-black text-white px-4 py-1 rounded">Download</button>
+            </div> -->
+            <!-- <div class="bg-white p-4 rounded shadow">
                 <h2 class="text-lg font-semibold mb-4">Market Strength</h2>
                 <canvas id="marketStrengthChart" width="800" height="600"></canvas>
-            </div>
+                <button onclick="downloadChart('marketStrengthChart', 'market_strength_barplot.png')" class="mt-2 bg-black text-white px-4 py-1 rounded">Download</button>
+            </div> -->
         </div>        
     </div> 
 </div>
@@ -34,13 +70,23 @@
         data: {
             datasets: [{
                 label: 'Market Clusters',
-                data: dataPoints,
-                // backgroundColor: 'rgba(54, 162, 235, 0.6)',
-                pointRadius: 4
+                data: dataPoints, // each point has .x, .y, .label (pincode)
+                pointRadius: 4,
+                backgroundColor: 'rgba(75, 192, 192, 0.8)'
             }]
         },
         options: {
             plugins: {
+                datalabels: {
+                    align: 'top',
+                    anchor: 'center',
+                    clamp: true,
+                    color: 'black',
+                    font: { size: 10 },
+                    formatter: function(value) {
+                        return value.label;
+                    }
+                },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
@@ -54,17 +100,18 @@
                 x: {
                     title: {
                         display: true,
-                        text: 'PC1 (Explained Variance: {{ variance[0]|round(2) }})'
+                        text: 'PC1'
                     }
                 },
                 y: {
                     title: {
                         display: true,
-                        text: 'PC2 (Explained Variance: {{ variance[1]|round(2) }})'
+                        text: 'PC2'
                     }
                 }
             }
-        }
+        },
+        plugins: [ChartDataLabels]
     });
     // biplot
     const biplotData = {{ biplot_data | tojson }};
@@ -83,6 +130,16 @@
         },
         options: {
             plugins: {
+                datalabels: {
+                    align: 'top',
+                    anchor: 'center',
+                    clamp: true,
+                    color: 'black',
+                    font: { size: 10 },
+                    formatter: function(value) {
+                        return value.label;
+                    }
+                },
                 tooltip: {
                     callbacks: {
                         label: function(context) {
@@ -112,7 +169,9 @@
                 }
             }
         },
-        plugins: [{
+        plugins: [
+            ChartDataLabels,
+            {
             id: 'biplotArrows',
             afterDatasetsDraw(chart, args, pluginOptions) {
                 const { ctx, chartArea: {left, right, top, bottom}, scales: {x, y} } = chart;
@@ -170,6 +229,18 @@
         options: {
             responsive: true,
             plugins: {
+                datalabels: {
+                    anchor: 'end',
+                    align: 'top',
+                    font: {
+                        size: 10,
+                        weight: 'bold'
+                    },
+                    color: 'black',
+                    formatter: function(value) {
+                        return value.toFixed(2); // 2 decimal places
+                    }
+                },
                 legend: { display: false },
                 tooltip: {
                     callbacks: {
@@ -198,8 +269,33 @@
                     }
                 }
             }
-        }
+        },
+        plugins: [ChartDataLabels]
     });
+    // download chart
+    
+    function downloadChart(canvasId, filename) {
+        const canvas = document.getElementById(canvasId);
+
+        // Create a temporary offscreen canvas
+        const tmpCanvas = document.createElement('canvas');
+        tmpCanvas.width = canvas.width;
+        tmpCanvas.height = canvas.height;
+        const ctx = tmpCanvas.getContext('2d');
+
+        // Fill white background
+        ctx.fillStyle = 'white';
+        ctx.fillRect(0, 0, tmpCanvas.width, tmpCanvas.height);
+
+        // Draw the original chart on top
+        ctx.drawImage(canvas, 0, 0);
+
+        // Export the composite image
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = tmpCanvas.toDataURL('image/png');
+        link.click();
+    }
 </script>
 {% endblock %}
 
