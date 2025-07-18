@@ -25,11 +25,14 @@
         <!-- code for city with pincodes -->
         {% if markets %} 
         <div class="relative mb-6 pt-4 p-2">
-          <button onclick="document.getElementById('dropdown').classList.toggle('hidden')" class="bg-white text-black text-xl font-semibold px-4 py-2 rounded w-full text-left">
+          <!-- <button onclick="document.getElementById('dropdown').classList.toggle('hidden')" class="bg-white text-black text-xl font-semibold px-4 py-2 rounded w-full text-left">
             Select Markets
-          </button>
+          </button> -->
+          <h2  class="text-white text-2xl font-semibold px-4 py-2">
+            Markets
+          </h2>
           <!-- <div id="dropdown" class="hidden absolute z-10 w-full bg-white border rounded shadow mt-1 max-h-96 overflow-y-auto"> -->
-          <div id="dropdown" class=" relative hidden absolute z-10 w-full pr-4 py-2  rounded shadow mt-1 max-h-96  bg-black  overflow-y-auto scrollbar-thin scrollbar-width:10px scrollbar-border-radius:5px scrollbar-thumb-gray-500 scrollbar-track-gray-200">   
+          <div id="dropdown" class=" relative absolute z-10 w-full pr-4 py-2  rounded shadow mt-1 max-h-96  bg-black  overflow-y-auto scrollbar-thin scrollbar-width:10px scrollbar-border-radius:5px scrollbar-thumb-gray-500 scrollbar-track-gray-200">   
             <input type="text" id="searchInput" placeholder="Search state..." class="w-full  border-gray-600 p-2  border-b" onkeyup="filterStates()">
             <div id="stateList">
               {% for state, cities in markets.items() %}
@@ -180,9 +183,9 @@
       });
       
       // If any state, city, or pincode is selected, reveal dropdown globally
-      if (selectedStates.length || selectedCities.length || selectedPincodes.length) {
-        sessionStorage.setItem('marketsVisible', 'true');
-      }
+      // if (selectedStates.length || selectedCities.length || selectedPincodes.length) {
+      //   sessionStorage.setItem('marketsVisible', 'true');
+      // }
 
     }    
 
@@ -259,9 +262,9 @@
       });
 
       // ✅ Show dropdown only if sessionStorage says to
-      if (sessionStorage.getItem('marketsVisible') === 'true') {
-          document.getElementById('dropdown').classList.remove('hidden');
-        }
+      // if (sessionStorage.getItem('marketsVisible') === 'true') {
+      //     document.getElementById('dropdown').classList.remove('hidden');
+      //   }
 
 
       // if (sessionStorage.getItem('selectedStates') !== '[]') {

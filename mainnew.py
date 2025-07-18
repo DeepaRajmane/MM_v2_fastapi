@@ -7,7 +7,7 @@ from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, EmailStr,ValidationError
 import uvicorn
 from user_database import SessionLocal,get_db
-from models import Users
+from models import Users 
 from fastapi.responses import RedirectResponse
 import pandas as pd
 from geo_spatial_data import GeoSpatialData
@@ -25,7 +25,9 @@ import logging
 # from market_pmap import MarketStrengthAnalyzer
 from pmap_chartjs import MarketStrengthAnalyzer
 import json
-import urllib.parse
+import io
+import xlsxwriter
+from fastapi.responses import StreamingResponse
 
 
 # Set up logging
@@ -426,7 +428,7 @@ async def market(request: Request, selected_features: List[str] = Query(default=
     return templates.TemplateResponse("marketmap.html", {"request": request, **context,
                                                          "markets": markets})
 
-## perceptual map display using chartjs
+# perceptual map display using chartjs
 @app.get("/perceptualmap", response_class=HTMLResponse)
 async def perceptualmap(request: Request, selected_features: List[str] = Query(default=[]),
                     selected_states: List[str] = Query(default=[]),
@@ -461,6 +463,7 @@ async def perceptualmap(request: Request, selected_features: List[str] = Query(d
     cluster_chart_data,variance=msa.get_cluster_data()
     biplot_data = msa.get_biplot_data()
     market_strength_chart_data = msa.get_market_strength_data()
+    df_mkt_strength=pd.DataFrame(market_strength_chart_data,columns=['Market','Strength'])
     print(f"market_strength_chart_data:{market_strength_chart_data}") 
 
     logger.info(f"Rendering settings with selected features: {selected_features}")
@@ -472,7 +475,80 @@ async def perceptualmap(request: Request, selected_features: List[str] = Query(d
                                     "market_strength_chart_data": market_strength_chart_data,
                                     "markets": markets})
 
-## perceptual map display using saved image
+
+
+@app.get("/download_excel")
+async def download_excel(request: Request, selected_features: List[str] = Query(default=[]),
+    selected_states: List[str] = Query(default=[]),
+    selected_cities: List[str] = Query(default=[]),
+    selected_pincodes: List[int] = Query(default=[])):
+    selected_features = [f.strip() for f in selected_features]
+    selected_states = [s.strip() for s in selected_states]
+    selected_cities = [c.strip() for c in selected_cities]
+    # print(f"download_excel:{selected_features},{selected_pincodes}")
+   
+    context = generate_context(selected_features, selected_states, selected_cities, selected_pincodes)
+
+    if len(selected_features) > 1:
+        d_selected_features_map = {}
+        for feature in selected_features:
+            for category, features_list in context['features'].items():
+                for f in features_list:
+                    if f['variable'] == feature:
+                        d_selected_features_map[f['variable']] = f['name']
+
+    if selected_cities and selected_pincodes:
+        tdf = df[
+            df['State'].isin(selected_states) &
+            df['City'].isin(selected_cities) &
+            df['pincode'].isin(selected_pincodes)
+        ]
+    d = {"features": selected_features ,
+        "fmap": d_selected_features_map ,
+        "df": tdf}
+    msa = MarketStrengthAnalyzer(**d)
+
+    # Chart data
+    cluster_chart_data, variance = msa.get_cluster_data()
+    biplot_data = msa.get_biplot_data()
+    market_strength_chart_data = msa.get_market_strength_data()
+
+    # Create Excel
+    output = io.BytesIO()
+    workbook = xlsxwriter.Workbook(output, {'in_memory': True})
+
+    # Sheet 1: Cluster chart
+    ws1 = workbook.add_worksheet('Market Clusters')
+    ws1.write_row('A1', ['PC1', 'PC2', 'Pincode'])
+    for idx, point in enumerate(cluster_chart_data):
+        ws1.write_row(idx + 1, 0, [point['x'], point['y'], point['label']])
+
+    # Sheet 2: Biplot
+    ws2 = workbook.add_worksheet('Biplot')
+    ws2.write_row('A1', ['PC1', 'PC2', 'Label'])
+    for idx, p in enumerate(biplot_data['points']):
+        ws2.write_row(idx + 1, 0, [p['x'], p['y'], p['label']])
+    ws2.write_row(len(biplot_data['points']) + 2, 0, ['Arrow X', 'Arrow Y', 'Feature'])
+    for i, a in enumerate(biplot_data['arrows']):
+        ws2.write_row(len(biplot_data['points']) + 3 + i, 0, [a['x'], a['y'], a['label']])
+
+    # Sheet 3: Market Strength
+    ws3 = workbook.add_worksheet('Market Strength')
+    ws3.write_row('A1', ['Market', 'Strength'])
+    for idx, (label, value) in enumerate(zip(market_strength_chart_data['labels'], market_strength_chart_data['values'])):
+        ws3.write_row(idx + 1, 0, [label, round(value, 2)])
+
+    workbook.close()
+    output.seek(0)
+
+    return StreamingResponse(
+        output,
+        headers={"Content-Disposition": "attachment; filename=market_analysis.xlsx"},
+        media_type="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+
+# # perceptual map display using saved image
 # @app.get("/perceptualmap", response_class=HTMLResponse)
 # async def perceptualmap(request: Request, selected_features: List[str] = Query(default=[]),
 #                     selected_states: List[str] = Query(default=[]),

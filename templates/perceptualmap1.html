@@ -3,8 +3,28 @@
 {% block title %}PerceptualMap{% endblock %}
 {% block content %}
 <div class=" flex flex-grow w-full h-full p-2"> 
-    <div>
-        <div class="grid grid-cols-1 md:grid-cols-2 max:grid-cols-3 gap-4 mb-6 p-2 pt-2">
+    <div class="relative w-full pt-16 px-4">
+        {% if selected_features and selected_pincodes %}
+            <div class="flex justify-end items-center gap-4 mb-2 pr-4">
+                <!-- Excel Download -->
+                <a href="/download_excel?
+                {% for feature in selected_features %}&selected_features={{ feature }}{% endfor %}
+                {% for state in selected_states %}&selected_states={{ state }}{% endfor %}
+                {% for city in selected_cities %}&selected_cities={{ city }}{% endfor %}
+                {% for pincode in selected_pincodes %}&selected_pincodes={{ pincode }}{% endfor %}"
+                class="absolute top-2 right-14 text-green-600 hover:text-blue-600 text-2xl z-10"
+                title="Download Excel">
+                📊
+                </a>
+                <!-- PNG Download (calls JavaScript function to download all charts as PNGs) -->
+                <a href="#" onclick="downloadAllCharts()" 
+                class="absolute top-2 right-4 text-blue-600 hover:text-green-600 text-2xl z-10"
+                title="Download all Charts as PNG">
+                ⬇️
+                </a>
+            </div>
+        {% endif %}                        
+        <div class=" grid grid-cols-1 md:grid-cols-2 max:grid-cols-3 gap-4 mb-6 p-2 pt-2">
             <div class="relative bg-white p-4 rounded shadow">
                 <h2 class="text-lg font-semibold mb-2">Market Clusters</h2>                
                 <!-- Download icon -->
@@ -15,7 +35,7 @@
                     <!-- Or use <i class="fas fa-download"></i> if using Font Awesome -->
                 </button>              
                 <canvas id="clusterChart" width="800" height="600"></canvas>
-              </div>
+            </div>
             <div class="relative bg-white p-4 rounded shadow">
                 <h2 class="text-lg font-semibold mb-2">Market Perceptual Biplot</h2>                
                 <!-- Download icon -->
@@ -26,8 +46,8 @@
                     <!-- Or use <i class="fas fa-download"></i> if using Font Awesome -->
                 </button>              
                 <canvas id="biplotChart" width="800" height="600"></canvas>
-              </div>
-              <div class="relative bg-white p-4 rounded shadow">
+            </div>
+            <div class="relative bg-white p-4 rounded shadow">
                 <h2 class="text-lg font-semibold mb-2">Market Strength</h2>                
                 <!-- Download icon -->
                 <button onclick="downloadChart('marketStrengthChart', 'market_strength_barplot.png')"
@@ -37,22 +57,8 @@
                     
                 </button>              
                 <canvas id="marketStrengthChart" width="800" height="600"></canvas>
-              </div>
-            <!-- <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-lg font-semibold mb-4">Market Clusters</h2>
-                <canvas id="clusterChart" width="800" height="600"></canvas>
-                <button onclick="downloadChart('clusterChart', 'market_clusters.png')" class="mt-2 bg-black text-white px-4 py-1 rounded">Download</button>
-            </div> -->
-            <!-- <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-lg font-semibold mb-4">Market Perceptual Biplot</h2>
-                <canvas id="biplotChart" width="800" height="600"></canvas>
-                <button onclick="downloadChart('biplotChart', 'market_perceptual_biplot.png')" class="mt-2 bg-black text-white px-4 py-1 rounded">Download</button>
-            </div> -->
-            <!-- <div class="bg-white p-4 rounded shadow">
-                <h2 class="text-lg font-semibold mb-4">Market Strength</h2>
-                <canvas id="marketStrengthChart" width="800" height="600"></canvas>
-                <button onclick="downloadChart('marketStrengthChart', 'market_strength_barplot.png')" class="mt-2 bg-black text-white px-4 py-1 rounded">Download</button>
-            </div> -->
+            </div>
+                                
         </div>        
     </div> 
 </div>
@@ -156,16 +162,16 @@
                         display: true,
                         text: 'PC1'
                     },
-                    min: -1.2,
-                    max: 1.2
+                    min: -1.4,
+                    max: 1.4
                 },
                 y: {
                     title: {
                         display: true,
                         text: 'PC2'
                     },
-                    min: -1.2,
-                    max: 1.2
+                    min: -1.4,
+                    max: 1.4
                 }
             }
         },
@@ -178,8 +184,11 @@
                 arrows.forEach(arrow => {
                     const startX = x.getPixelForValue(0);
                     const startY = y.getPixelForValue(0);
-                    const endX = x.getPixelForValue(arrow.x);
-                    const endY = y.getPixelForValue(arrow.y);
+                    const scaleFactor = 1.5; // ← Increase this to make arrows longer
+                    const endX = x.getPixelForValue(arrow.x * scaleFactor);
+                    const endY = y.getPixelForValue(arrow.y * scaleFactor);
+                    // const endX = x.getPixelForValue(arrow.x);
+                    // const endY = y.getPixelForValue(arrow.y);
                     // Draw the arrow
                     ctx.save();
                     ctx.beginPath();
@@ -199,12 +208,21 @@
                                 endY - headLength * Math.sin(angle + Math.PI / 6));
                     ctx.lineTo(endX, endY);
                     ctx.fillStyle = 'red';
-                    ctx.fill();
-                    // Feature name at arrow tip
+                    ctx.fill();                    
+                    // Determine safe label position inside chart bounds
+                    let labelX = endX + 10;
+                    let labelY = endY - 5;
+
+                    // Adjust if label goes out of bounds
+                    if (labelX > right - 20) labelX = endX - 20;
+                    if (labelX < left + 20)  labelX = endX + 20;
+                    if (labelY < top + 10)   labelY = endY + 10;
+                    if (labelY > bottom - 10) labelY = endY - 10;
+                    // Draw feature name
                     ctx.fillStyle = 'green';
                     ctx.font = '10px sans-serif';
                     ctx.textAlign = 'center';
-                    ctx.fillText(arrow.label, endX + 10, endY - 5);
+                    ctx.fillText(arrow.label, labelX, labelY);
                     ctx.restore();
                 });
             }
@@ -296,6 +314,12 @@
         link.href = tmpCanvas.toDataURL('image/png');
         link.click();
     }
+    function downloadAllCharts() {
+        downloadChart('clusterChart', 'market_clusters.png');
+        downloadChart('biplotChart', 'market_biplot.png');
+        downloadChart('marketStrengthChart', 'market_strength.png');
+    }
 </script>
 {% endblock %}
 
+ 

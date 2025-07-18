@@ -2,10 +2,6 @@ import numpy as np
 import pandas as pd
 from sklearn.decomposition import PCA
 from sklearn.preprocessing import StandardScaler
-# import matplotlib.pyplot as plt
-# import seaborn as sns
-# import io
-# import base64
 
 class MarketStrengthAnalyzer:
     def __init__(self, n_components=2, **kwargs):
@@ -140,10 +136,3 @@ class MarketStrengthAnalyzer:
 
     
 
-if __name__=="__main__":
-    d={'features': ['Mutual_Funds'], 
-       'fmap': {'Mutual_Funds': 'Mutual Funds'}, 
-       'data_file': 'C:\\Users\\RajmaneD\\OneDrive - Kantar\\DR\\micro_markets_webapp\\KANTAR_ICUBE_2022_TO_2024_coded_Data_for_Mumbai.xlsx', 
-       'data_sheet': 'Sheet1'}
-    msa=MarketStrengthAnalyzer(**d)
-    # mkt_clusters_img64=msa.plot_market_clusters 
