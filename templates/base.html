@@ -74,7 +74,7 @@
           <div class="container mx-auto px-6 py-4">
             <div class="flex justify-between items-center">
               <div>
-                <h1 class="text-3xl font-semibold  text-gray-800">Micro-Markets,KANTAR</h1>
+                <h1 class="text-4xl font-semibold  text-gray-800">Geo 360&deg;</h1>
               </div>
               <div>
                 <form action="/signout" method="get">
@@ -87,16 +87,23 @@
           
         <!-- Main panel content -->                  
         <main class="p-2 flex-grow overflow-y-auto">
-          <div class="flex p-2">            
-            <nav class="navbar flex space-x-4 gap-4 text-blue-600 hover:underline">              
-              {% for item in nav_items %}        
-              <a href="#" onclick="navigateTo('{{ item.lower() }}')" 
-                {% if request.url.path == '/' + item.lower() or (item == 'Home' and request.url.path == '/home') %}
-                class="active text-blue-400"{% endif %}>
-                {{ item }}
-              </a>                  
-              {% endfor %}              
-            </nav>
+          <div class="flex p-2"> 
+            <!-- Container for navbar and logo -->
+            <div class="flex items-center justify-between w-full">           
+              <nav class="navbar flex space-x-4 gap-4 text-blue-600 hover:underline">              
+                {% for item in nav_items %}        
+                <a href="#" onclick="navigateTo('{{ item.lower() }}')" 
+                  {% if request.url.path == '/' + item.lower() or (item == 'Home' and request.url.path == '/home') %}
+                  class="active text-blue-400"{% endif %}>
+                  {{ item }}
+                </a>                  
+                {% endfor %}              
+              </nav>
+
+              <!-- Logo image (right side) -->
+              <img src="{{ url_for('static', path='images/kantar_logo.png') }}" alt="Logo" class="h-15 w-20"/>
+
+            </div>
           </div>          
           <div class="flex-1 flex-grow h-full">            
             {% block content %}{% endblock %}            

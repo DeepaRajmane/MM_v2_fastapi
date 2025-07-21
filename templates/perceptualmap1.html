@@ -194,7 +194,7 @@
                     ctx.beginPath();
                     ctx.moveTo(startX, startY);
                     ctx.lineTo(endX, endY);
-                    ctx.strokeStyle = 'red';
+                    ctx.strokeStyle = 'gray';
                     ctx.lineWidth = 1.5;
                     ctx.stroke();
                     // Arrow head
@@ -207,7 +207,7 @@
                     ctx.lineTo(endX - headLength * Math.cos(angle + Math.PI / 6),
                                 endY - headLength * Math.sin(angle + Math.PI / 6));
                     ctx.lineTo(endX, endY);
-                    ctx.fillStyle = 'red';
+                    ctx.fillStyle = 'gray';
                     ctx.fill();                    
                     // Determine safe label position inside chart bounds
                     let labelX = endX + 10;

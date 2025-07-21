@@ -331,7 +331,7 @@ def get_propensity(**d):
             
     ps['city']=ps_city
     ps['state']=ps_state
-    ps['pan India']=ps_pan_india
+    ps['India']=ps_pan_india
     return ps
 
 
