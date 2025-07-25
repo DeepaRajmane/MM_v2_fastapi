@@ -24,7 +24,6 @@ import sqlite3
 import logging
 # from market_pmap import MarketStrengthAnalyzer
 from pmap_chartjs import MarketStrengthAnalyzer
-import json
 import io
 import xlsxwriter
 from fastapi.responses import StreamingResponse
@@ -383,7 +382,7 @@ async def dashboard(request: Request, selected_features: List[str] = Query(defau
         # print(f"dist_charts:{dist_charts}") 
           
     logger.info(f"Rendering dashboard page with selected features: {selected_features},states:{selected_states},cities:{selected_cities},pincodes:{selected_pincodes}")
-    return templates.TemplateResponse("dashboard.html", {"request": request, **context,
+    return templates.TemplateResponse("dashboard1.html", {"request": request, **context,
                                                         "markets": markets,
                                                         "charts": dist_charts,
                                                         "ps_data":ps_data if selected_pincodes else None})

@@ -101,7 +101,7 @@
               </nav>
 
               <!-- Logo image (right side) -->
-              <img src="{{ url_for('static', path='images/kantar_logo.png') }}" alt="Logo" class="h-15 w-20"/>
+              <img src="{{ url_for('static', path='images/kantar_logo_transparent.png') }}" alt="Logo" class="h-15 w-20"/>
 
             </div>
           </div>          
@@ -277,6 +277,14 @@
       // if (sessionStorage.getItem('selectedStates') !== '[]') {
       //   document.getElementById('dropdown').classList.remove('hidden');
       // }
+      const psRadio = document.getElementById('psRadio');
+      const psLabel = document.getElementById('ps-radio-label');
+
+      if (sessionStorage.getItem('selectedPincodes') == '[]') {
+        psRadio.disabled = true;
+        psLabel.classList.add('cursor-not-allowed', 'text-gray-400');
+        psLabel.title = 'Select at least one market to view Propensity Score';
+      }
 
       handleSelectAllPincodes();
     });
